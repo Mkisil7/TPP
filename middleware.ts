@@ -5,7 +5,7 @@ import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/lib/supabase/config";
 type CookieToSet = { name: string; value: string; options: CookieOptions };
 
 // API routes enforce their own auth (returning JSON 401) instead of redirecting.
-const PUBLIC_PATHS = ["/login", "/auth", "/api"];
+const PUBLIC_PATHS = ["/login", "/verify", "/auth", "/api"];
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
