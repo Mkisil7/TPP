@@ -33,6 +33,14 @@ export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const isPublic = PUBLIC_PATHS.some((p) => path === p || path.startsWith(`${p}/`));
 
+  // Email sign-in links may land on the site root (Supabase falls back to the
+  // Site URL when a redirect isn't allowlisted). Forward them to /auth/confirm.
+  if ((path === "/" || path === "/login") && request.nextUrl.searchParams.has("code")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/auth/confirm";
+    return NextResponse.redirect(url);
+  }
+
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";

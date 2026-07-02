@@ -27,8 +27,9 @@ export function VerifyForm({ maskedEmail }: { maskedEmail: string }) {
           <div>
             <p className="text-sm font-semibold text-adt-navy">Verify this device</p>
             <p className="mt-1 text-sm text-slate-500">
-              We emailed a 6-digit code to <span className="font-medium">{maskedEmail}</span>. Enter
-              it to finish signing in.
+              We emailed <span className="font-medium">{maskedEmail}</span>. Tap the{" "}
+              <span className="font-medium">Sign in</span> link in that email on this device — or,
+              if the email shows a 6-digit code, enter it below.
             </p>
           </div>
         </div>

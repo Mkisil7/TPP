@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { AdtLogo } from "@/components/Brand";
 import { signIn, signUp, type AuthState } from "@/app/auth/actions";
@@ -16,8 +16,17 @@ function SubmitButton({ label }: { label: string }) {
 
 export default function LoginPage() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [notice, setNotice] = useState("");
   const action = mode === "signin" ? signIn : signUp;
   const [state, formAction] = useFormState<AuthState, FormData>(action, {});
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("m") === "link") {
+      setNotice(
+        "That sign-in link couldn't be used in this browser (links are one-time and must open where you signed in). Sign in again and we'll send a fresh one.",
+      );
+    }
+  }, []);
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-adt-navy px-5">
@@ -28,6 +37,10 @@ export default function LoginPage() {
             {mode === "signin" ? "Sign in to your field account" : "Create your field account"}
           </p>
         </div>
+
+        {notice && (
+          <p className="mb-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">{notice}</p>
+        )}
 
         <form action={formAction} className="space-y-4">
           <div>

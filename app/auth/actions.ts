@@ -1,7 +1,7 @@
 "use server";
 
 import { randomUUID } from "crypto";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -36,12 +36,28 @@ async function isTrustedDevice(supabase: SB, userId: string): Promise<boolean> {
   return Boolean(data);
 }
 
-/** Email a 6-digit code and remember which email we're verifying. */
+/** The app's public origin (works on any Vercel URL). */
+async function appOrigin(): Promise<string> {
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "tech-tpp.vercel.app";
+  const proto = h.get("x-forwarded-proto") ?? "https";
+  return `${proto}://${host}`;
+}
+
+/**
+ * Email a verification message and remember which email we're verifying.
+ * The email carries both a sign-in link (works with Supabase's default
+ * template) and a 6-digit code (shown once a custom template prints it).
+ * The link lands on /auth/confirm, which marks this device trusted.
+ */
 async function startVerification(email: string): Promise<string | null> {
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithOtp({
     email,
-    options: { shouldCreateUser: false },
+    options: {
+      shouldCreateUser: false,
+      emailRedirectTo: `${await appOrigin()}/auth/confirm`,
+    },
   });
   if (error) return error.message;
   const jar = await cookies();
@@ -136,10 +152,13 @@ export async function resendCode(): Promise<AuthState> {
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithOtp({
     email,
-    options: { shouldCreateUser: false },
+    options: {
+      shouldCreateUser: false,
+      emailRedirectTo: `${await appOrigin()}/auth/confirm`,
+    },
   });
   if (error) return { error: error.message };
-  return { message: "A new code is on its way." };
+  return { message: "A new email is on its way." };
 }
 
 export async function signOut() {
