@@ -174,8 +174,11 @@ export async function prepareTotpEnrollment(): Promise<
     }
   }
 
+  // Explicit issuer: names the entry in the authenticator app, and avoids
+  // GoTrue deriving it from the project Site URL (500s if that's malformed).
   const { data, error } = await supabase.auth.mfa.enroll({
     factorType: "totp",
+    issuer: "ADT Field Assessment",
     friendlyName: `ADT Field (${new Date().toISOString().slice(0, 10)})`,
   });
   if (error || !data) return { error: error?.message ?? "Could not start enrollment." };

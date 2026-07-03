@@ -50,7 +50,11 @@ export async function GET(request: Request) {
     out.signUp = { ok: !su.error, error: su.error?.message ?? null };
     if (su.error) return NextResponse.json(out);
 
-    const enroll = await supabase.auth.mfa.enroll({ factorType: "totp", friendlyName: "probe" });
+    const enroll = await supabase.auth.mfa.enroll({
+      factorType: "totp",
+      issuer: "ADT Field Assessment",
+      friendlyName: "probe",
+    });
     out.enroll = {
       ok: !enroll.error,
       error: enroll.error?.message ?? null,
