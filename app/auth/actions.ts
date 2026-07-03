@@ -82,36 +82,22 @@ async function startCodeVerification(supabase: SB, userId: string, email: string
   return null;
 }
 
-/**
- * Link verification (fallback when no SMTP is configured). Signs the user
- * out and emails a Supabase one-time link that lands on /auth/confirm.
- * Note: corporate mail scanners may consume these links.
- */
-async function startLinkVerification(supabase: SB, email: string): Promise<string | null> {
-  await supabase.auth.signOut();
-  const { error } = await supabase.auth.signInWithOtp({
-    email,
-    options: {
-      shouldCreateUser: false,
-      emailRedirectTo: `${await appOrigin()}/auth/confirm`,
-    },
-  });
-  if (error) return error.message;
-  const jar = await cookies();
-  jar.set(PENDING_COOKIE, email, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "lax",
-    path: "/",
-    maxAge: 60 * 15,
-  });
-  return null;
+/** Id of the user's verified authenticator (TOTP) factor, if any. */
+async function verifiedTotpFactorId(supabase: SB): Promise<string | null> {
+  const { data } = await supabase.auth.mfa.listFactors();
+  const factor = data?.totp?.find((f) => f.status === "verified");
+  return factor?.id ?? null;
 }
 
+/**
+ * Kick off verification for a signed-in but untrusted session.
+ * Priority: existing authenticator app → emailed code (needs SMTP) →
+ * authenticator enrollment (handled on /verify; nothing to send).
+ */
 async function startVerification(supabase: SB, userId: string, email: string): Promise<string | null> {
-  return mailerConfigured()
-    ? startCodeVerification(supabase, userId, email)
-    : startLinkVerification(supabase, email);
+  if (await verifiedTotpFactorId(supabase)) return null;
+  if (mailerConfigured()) return startCodeVerification(supabase, userId, email);
+  return null;
 }
 
 export async function signIn(_prev: AuthState, formData: FormData): Promise<AuthState> {
@@ -167,15 +153,62 @@ export async function signUp(_prev: AuthState, formData: FormData): Promise<Auth
   redirect("/verify");
 }
 
+/**
+ * Start (or restart) authenticator enrollment for the signed-in user.
+ * Returns the QR code + manual secret to render on /verify.
+ */
+export async function prepareTotpEnrollment(): Promise<
+  { factorId: string; qr: string; secret: string } | { error: string }
+> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Your session expired — please sign in again." };
+
+  // Clear any abandoned unverified factors so re-visits get a fresh QR.
+  const { data: factors } = await supabase.auth.mfa.listFactors();
+  for (const f of factors?.all ?? []) {
+    if (f.factor_type === "totp" && f.status === "unverified") {
+      await supabase.auth.mfa.unenroll({ factorId: f.id });
+    }
+  }
+
+  const { data, error } = await supabase.auth.mfa.enroll({
+    factorType: "totp",
+    friendlyName: `ADT Field (${new Date().toISOString().slice(0, 10)})`,
+  });
+  if (error || !data) return { error: error?.message ?? "Could not start enrollment." };
+  return { factorId: data.id, qr: data.totp.qr_code, secret: data.totp.secret };
+}
+
 export async function verifyCode(_prev: AuthState, formData: FormData): Promise<AuthState> {
+  const mode = String(formData.get("mode") ?? "email");
   const code = String(formData.get("code") ?? "").replace(/\s/g, "");
-  if (!/^\d{6}$/.test(code)) return { error: "Enter the 6-digit code from your email." };
+  if (!/^\d{6}$/.test(code)) return { error: "Enter the 6-digit code." };
 
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: "Your session expired — please sign in again." };
+
+  // Authenticator-app paths: verify against GoTrue MFA, then trust device.
+  if (mode === "totp" || mode === "enroll") {
+    const factorId =
+      mode === "totp"
+        ? await verifiedTotpFactorId(supabase)
+        : String(formData.get("factorId") ?? "");
+    if (!factorId) return { error: "Verification session expired — go back and sign in again." };
+
+    const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId, code });
+    if (error) {
+      return { error: "That code doesn't match — enter the newest code from your authenticator app." };
+    }
+    await trustThisDevice(supabase, user.id);
+    revalidatePath("/", "layout");
+    redirect("/");
+  }
 
   const { data: row } = await supabase
     .from("login_codes")
