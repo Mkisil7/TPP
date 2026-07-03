@@ -22,7 +22,7 @@ export function PropertyForm({ jobId, initial }: { jobId: string; initial: Prope
   }
 
   return (
-    <div className="space-y-5 pb-24">
+    <div className="space-y-5 pb-32">
       <h1 className="text-2xl font-extrabold text-adt-navy">Property snapshot</h1>
       <p className="text-sm text-slate-500">
         Enter the address and the home details you collected on site.
@@ -44,7 +44,7 @@ export function PropertyForm({ jobId, initial }: { jobId: string; initial: Prope
         </div>
       </Section>
 
-      <div className="no-print fixed inset-x-0 bottom-0 border-t border-adt-line bg-white/95 p-3 backdrop-blur">
+      <div className="mobile-action-bar no-print fixed inset-x-0 bottom-0 border-t border-adt-line bg-white/95 pt-3 backdrop-blur">
         <div className="mx-auto flex max-w-2xl gap-3">
           <button
             className="btn-secondary flex-1"

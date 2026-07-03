@@ -16,13 +16,13 @@ export function Stepper({ jobId }: { jobId: string }) {
   const current = STEPS.findIndex((s) => pathname.endsWith(`/${s.slug}`));
 
   return (
-    <nav className="no-print mb-5 flex items-center gap-1 overflow-x-auto">
+    <nav className="scroll-x no-print mb-5 flex items-center gap-1">
       {STEPS.map((step, i) => (
         <Link
           key={step.slug}
           href={`/assessment/${jobId}/${step.slug}`}
           className={cn(
-            "flex items-center gap-2 whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-semibold transition",
+            "flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-semibold transition",
             i === current
               ? "bg-adt-navy text-white"
               : i < current

@@ -29,7 +29,7 @@ export default function LoginPage() {
   }, []);
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-adt-navy px-5">
+    <main className="flex min-h-[100dvh] flex-col items-center justify-center bg-adt-navy px-5 py-8">
       <div className="card w-full max-w-md p-7">
         <div className="mb-6 flex flex-col items-center gap-3 text-center">
           <AdtLogo />

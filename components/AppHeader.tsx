@@ -10,7 +10,7 @@ export function AppHeader() {
           <AdtLogo />
         </Link>
         <form action={signOut}>
-          <button className="text-sm font-semibold text-slate-500 hover:text-adt-navy">
+          <button className="-mr-2 min-h-[44px] px-2 text-sm font-semibold text-slate-500 hover:text-adt-navy">
             Sign out
           </button>
         </form>

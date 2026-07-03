@@ -80,7 +80,7 @@ export function ReviewForm({ jobId, initial }: { jobId: string; initial: Assessm
   }
 
   return (
-    <div className="space-y-5 pb-24">
+    <div className="space-y-5 pb-32">
       <h1 className="text-2xl font-extrabold text-adt-navy">Review assessment</h1>
 
       <Section title="Household">
@@ -217,7 +217,7 @@ export function ReviewForm({ jobId, initial }: { jobId: string; initial: Assessm
                 <button
                   type="button"
                   onClick={() => removeRoom(room.id)}
-                  className="rounded-lg px-2 py-2 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600"
                   aria-label="Remove room"
                 >
                   ✕
@@ -287,7 +287,7 @@ export function ReviewForm({ jobId, initial }: { jobId: string; initial: Assessm
         </div>
       </Section>
 
-      <div className="no-print fixed inset-x-0 bottom-0 border-t border-adt-line bg-white/95 p-3 backdrop-blur">
+      <div className="mobile-action-bar no-print fixed inset-x-0 bottom-0 border-t border-adt-line bg-white/95 pt-3 backdrop-blur">
         <div className="mx-auto flex max-w-2xl gap-3">
           <button
             className="btn-secondary flex-1"

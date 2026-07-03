@@ -31,7 +31,7 @@ export function ProposalDocument({
     <div className="space-y-0">
       {/* ---- Cover ---- */}
       <Page>
-        <div className="bg-adt-navy px-8 py-10 text-white">
+        <div className="bg-adt-navy px-5 py-8 sm:px-8 sm:py-10 text-white">
           <div className="mb-8 flex items-center justify-between">
             <AdtLogo light />
             <span className="rounded-full bg-white/15 px-3 py-1 text-sm font-semibold">
@@ -57,13 +57,13 @@ export function ProposalDocument({
             </div>
           ))}
         </div>
-        <div className="px-8 py-5">
+        <div className="px-5 py-5 sm:px-8">
           <p className="text-sm leading-relaxed text-slate-600">{meta.blurb}</p>
         </div>
       </Page>
 
       {/* ---- What we found ---- */}
-      <Page className="p-8">
+      <Page className="p-5 sm:p-8">
         <h2 className="mb-4 text-2xl font-extrabold text-adt-navy">What we found</h2>
         {narrative ? (
           <div className="space-y-3 text-[15px] leading-relaxed text-slate-700">
@@ -79,7 +79,7 @@ export function ProposalDocument({
       </Page>
 
       {/* ---- Area by area ---- */}
-      <Page className="p-8">
+      <Page className="p-5 sm:p-8">
         <h2 className="mb-1 text-2xl font-extrabold text-adt-navy">
           Recommendations — area by area
         </h2>
@@ -124,7 +124,7 @@ export function ProposalDocument({
       </Page>
 
       {/* ---- Life safety & exterior ---- */}
-      <Page className="p-8">
+      <Page className="p-5 sm:p-8">
         <h2 className="mb-5 text-2xl font-extrabold text-adt-navy">
           Life safety, video &amp; smart home
         </h2>
@@ -161,13 +161,33 @@ export function ProposalDocument({
       </Page>
 
       {/* ---- Pricing & signature ---- */}
-      <Page className="p-8">
+      <Page className="p-5 sm:p-8">
         <h2 className="mb-1 text-2xl font-extrabold text-adt-navy">
           {meta.medal} {meta.label} — investment &amp; agreement
         </h2>
         <p className="mb-4 text-sm text-slate-500">Quality Service Plan &amp; 24/7 ADT Monitoring.</p>
 
-        <table className="w-full text-sm">
+        {/* Stacked cards on narrow phones — avoids a hidden horizontal scroll
+            on a table a technician is showing a customer. Real table on
+            wider screens and in the printed/PDF export. */}
+        <div className="space-y-2 sm:hidden">
+          {tier.byCategory.flatMap((g) =>
+            g.items.map((it) => (
+              <div key={it.id} className="rounded-lg border border-adt-line/70 px-3 py-2">
+                <div className="flex items-start justify-between gap-3">
+                  <span className="text-sm text-slate-700">{it.name}</span>
+                  <span className="shrink-0 text-sm font-semibold text-adt-navy">×{it.quantity}</span>
+                </div>
+                <div className="mt-1 flex justify-between text-xs text-slate-400">
+                  <span>Unit $______</span>
+                  <span>Total $______</span>
+                </div>
+              </div>
+            )),
+          )}
+        </div>
+
+        <table className="hidden w-full text-sm sm:table">
           <thead>
             <tr className="border-b-2 border-adt-navy text-left text-adt-navy">
               <th className="py-2">Equipment</th>

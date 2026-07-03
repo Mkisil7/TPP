@@ -13,12 +13,12 @@ export default async function DashboardPage() {
     <>
       <AppHeader />
       <main className="mx-auto max-w-3xl px-4 py-6">
-        <div className="mb-5 flex items-center justify-between">
+        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-extrabold text-adt-navy">Jobs</h1>
             <p className="text-sm text-slate-500">Your saved home risk assessments.</p>
           </div>
-          <Link href="/assessment/new" className="btn-primary">
+          <Link href="/assessment/new" className="btn-primary whitespace-nowrap sm:w-auto">
             + New assessment
           </Link>
         </div>
@@ -48,7 +48,10 @@ export default async function DashboardPage() {
                   </p>
                 </Link>
                 <div className="flex items-center gap-2">
-                  <Link href={`/assessment/${job.id}/proposal`} className="btn-secondary px-3 py-2 text-sm">
+                  <Link
+                    href={`/assessment/${job.id}/proposal`}
+                    className="btn-secondary min-h-[44px] px-3 py-2 text-sm"
+                  >
                     Proposal
                   </Link>
                   <JobRowActions id={job.id} name={job.family_name?.trim() || "this job"} />

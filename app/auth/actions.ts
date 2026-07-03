@@ -1,6 +1,5 @@
 "use server";
 
-import { randomUUID } from "crypto";
 import { cookies, headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -8,7 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 
 const ALLOWED_DOMAIN = process.env.ALLOWED_EMAIL_DOMAIN ?? "adt.com";
 const DID_COOKIE = "adt_did"; // trusted-device id (high-entropy secret)
-const PENDING_COOKIE = "adt_pending_email"; // email awaiting code verification
+const PENDING_COOKIE = "adt_pending_email"; // email awaiting link verification
 
 export type AuthState = { error?: string; message?: string };
 
@@ -16,13 +15,9 @@ function domainOk(email: string): boolean {
   return email.trim().toLowerCase().endsWith(`@${ALLOWED_DOMAIN.toLowerCase()}`);
 }
 
-function newDeviceId(): string {
-  return (randomUUID() + randomUUID()).replace(/-/g, "");
-}
-
 type SB = Awaited<ReturnType<typeof createClient>>;
 
-/** True when this browser has already verified a code for this user. */
+/** True when this browser has already verified via email link for this user. */
 async function isTrustedDevice(supabase: SB, userId: string): Promise<boolean> {
   const jar = await cookies();
   const did = jar.get(DID_COOKIE)?.value;
@@ -45,9 +40,7 @@ async function appOrigin(): Promise<string> {
 }
 
 /**
- * Email a verification message and remember which email we're verifying.
- * The email carries both a sign-in link (works with Supabase's default
- * template) and a 6-digit code (shown once a custom template prints it).
+ * Email a one-time sign-in link and remember which email we're verifying.
  * The link lands on /auth/confirm, which marks this device trusted.
  */
 async function startVerification(email: string): Promise<string | null> {
@@ -84,7 +77,7 @@ export async function signIn(_prev: AuthState, formData: FormData): Promise<Auth
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Known device → straight in. New device → require an email code.
+  // Known device → straight in. New device → require an email link.
   if (user && (await isTrustedDevice(supabase, user.id))) {
     revalidatePath("/", "layout");
     redirect("/");
@@ -108,41 +101,11 @@ export async function signUp(_prev: AuthState, formData: FormData): Promise<Auth
   const { error } = await supabase.auth.signUp({ email, password });
   if (error) return { error: error.message };
 
-  // First account is always a new device — verify with an email code.
+  // First account is always a new device — verify with an emailed link.
   await supabase.auth.signOut();
   const otpErr = await startVerification(email);
   if (otpErr) return { error: otpErr };
   redirect("/verify");
-}
-
-export async function verifyCode(_prev: AuthState, formData: FormData): Promise<AuthState> {
-  const jar = await cookies();
-  const email = jar.get(PENDING_COOKIE)?.value;
-  const code = String(formData.get("code") ?? "").replace(/\s/g, "");
-  if (!email) return { error: "Your verification session expired — please sign in again." };
-  if (!/^\d{6}$/.test(code)) return { error: "Enter the 6-digit code from your email." };
-
-  const supabase = await createClient();
-  const { error } = await supabase.auth.verifyOtp({ email, token: code, type: "email" });
-  if (error) return { error: error.message };
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (user) {
-    const did = newDeviceId();
-    await supabase.from("trusted_devices").insert({ user_id: user.id, device_id: did });
-    jar.set(DID_COOKIE, did, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "lax",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 365,
-    });
-  }
-  jar.delete(PENDING_COOKIE);
-  revalidatePath("/", "layout");
-  redirect("/");
 }
 
 export async function resendCode(): Promise<AuthState> {

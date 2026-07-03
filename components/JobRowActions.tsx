@@ -13,7 +13,7 @@ export function JobRowActions({ id, name }: { id: string; name: string }) {
     return (
       <div className="flex items-center gap-1">
         <button
-          className="rounded-lg bg-red-600 px-2 py-2 text-sm font-semibold text-white disabled:opacity-50"
+          className="min-h-[44px] rounded-lg bg-red-600 px-3 text-sm font-semibold text-white disabled:opacity-50"
           disabled={pending}
           onClick={() =>
             start(async () => {
@@ -24,7 +24,10 @@ export function JobRowActions({ id, name }: { id: string; name: string }) {
         >
           {pending ? "…" : "Delete"}
         </button>
-        <button className="btn-ghost px-2 py-2 text-sm" onClick={() => setConfirming(false)}>
+        <button
+          className="btn-ghost min-h-[44px] px-3 text-sm"
+          onClick={() => setConfirming(false)}
+        >
           Cancel
         </button>
       </div>
@@ -34,7 +37,7 @@ export function JobRowActions({ id, name }: { id: string; name: string }) {
   return (
     <button
       aria-label={`Delete ${name}`}
-      className="rounded-lg px-2 py-2 text-sm text-slate-400 hover:bg-red-50 hover:text-red-600"
+      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-base text-slate-400 hover:bg-red-50 hover:text-red-600"
       onClick={() => setConfirming(true)}
     >
       ✕

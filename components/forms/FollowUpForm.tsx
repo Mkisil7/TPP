@@ -37,7 +37,7 @@ export function FollowUpForm({
   }
 
   return (
-    <div className="space-y-5 pb-24">
+    <div className="space-y-5 pb-32">
       <h1 className="text-2xl font-extrabold text-adt-navy">Follow-up</h1>
       <p className="text-sm text-slate-500">A few things the paper form doesn’t capture.</p>
 
@@ -103,7 +103,7 @@ export function FollowUpForm({
         />
       </Section>
 
-      <div className="no-print fixed inset-x-0 bottom-0 border-t border-adt-line bg-white/95 p-3 backdrop-blur">
+      <div className="mobile-action-bar no-print fixed inset-x-0 bottom-0 border-t border-adt-line bg-white/95 pt-3 backdrop-blur">
         <div className="mx-auto flex max-w-2xl gap-3">
           <button
             className="btn-secondary flex-1"
