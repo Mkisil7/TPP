@@ -30,12 +30,20 @@ Next.js (App Router) · TypeScript · Tailwind · Supabase (Auth + Postgres + St
 
 ## Security
 
-- All secrets are **server-side only** (`ANTHROPIC_API_KEY`). The browser only ever
-  sees the public Supabase anon key, gated by Row-Level Security (`user_id = auth.uid()`).
+- All secrets are **server-side only** (`ANTHROPIC_API_KEY`, `SMTP_PASS`). The browser
+  only ever sees the public Supabase anon key, gated by Row-Level Security
+  (`user_id = auth.uid()`).
 - Auth is restricted to **`@adt.com`** emails — enforced in the sign-up server action
   and again by a Postgres trigger on `auth.users`.
+- **2FA on new devices**: first sign-up and any unrecognized browser require an
+  emailed verification before the app unlocks. With `SMTP_USER`/`SMTP_PASS` set, the
+  app emails a **typed 6-digit code** (hashed at rest, 10-minute expiry, 5-attempt
+  limit — and immune to corporate mail scanners that pre-click links). Without SMTP
+  it falls back to a Supabase one-time sign-in link (note: Microsoft Defender
+  SafeLinks-style scanners consume those links, so prefer the code mode).
 - Uploaded form photos go to a **private** Storage bucket scoped per user.
-- `middleware.ts` protects every route; API routes return their own JSON 401.
+- `middleware.ts` protects every route and fences unverified devices to `/verify`;
+  API routes return their own JSON 401.
 
 ## Setup
 
@@ -44,6 +52,9 @@ Next.js (App Router) · TypeScript · Tailwind · Supabase (Auth + Postgres + St
    - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` (Supabase → Project
      Settings → API)
    - `ANTHROPIC_API_KEY` (optional — enables photo OCR + AI narrative)
+   - `SMTP_USER` + `SMTP_PASS` (optional — enables typed 6-digit 2FA codes; for
+     Gmail, `SMTP_USER` is the address and `SMTP_PASS` is a Google app password.
+     `SMTP_HOST`/`SMTP_PORT` default to `smtp.gmail.com:465`)
    - `ALLOWED_EMAIL_DOMAIN` (default `adt.com`)
 3. **Database**: apply `supabase/migrations/0001_init.sql` (Supabase SQL editor or
    `supabase db push`). It creates the `jobs` table + RLS, the `@adt.com` sign-up

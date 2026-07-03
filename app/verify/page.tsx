@@ -13,17 +13,32 @@ function maskEmail(email: string): string {
 }
 
 export default async function VerifyPage() {
-  const jar = await cookies();
-  const email = jar.get("adt_pending_email")?.value;
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!email) {
-    // Nothing to verify — send them where they belong.
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    redirect(user ? "/" : "/login");
+  if (user) {
+    // Typed-code mode: session exists, device pending. If a code is active
+    // show the input; middleware sends verified devices home automatically.
+    const { data: codeRow } = await supabase
+      .from("login_codes")
+      .select("user_id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    return (
+      <VerifyForm
+        mode="code"
+        maskedEmail={maskEmail(user.email ?? "")}
+        hasActiveCode={Boolean(codeRow)}
+      />
+    );
   }
 
-  return <VerifyForm maskedEmail={maskEmail(email!)} />;
+  // Link-fallback mode: signed out while a link email is pending.
+  const jar = await cookies();
+  const email = jar.get("adt_pending_email")?.value;
+  if (!email) redirect("/login");
+
+  return <VerifyForm mode="link" maskedEmail={maskEmail(email!)} hasActiveCode={false} />;
 }

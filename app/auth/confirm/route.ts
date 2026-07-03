@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 export const dynamic = "force-dynamic";
 
 const DID_COOKIE = "adt_did";
+const DV_COOKIE = "adt_dv";
 const PENDING_COOKIE = "adt_pending_email";
 
 /**
@@ -43,13 +44,9 @@ export async function GET(request: Request) {
       const jar = await cookies();
       const did = (randomUUID() + randomUUID()).replace(/-/g, "");
       await supabase.from("trusted_devices").insert({ user_id: user.id, device_id: did });
-      jar.set(DID_COOKIE, did, {
-        httpOnly: true,
-        secure: true,
-        sameSite: "lax",
-        path: "/",
-        maxAge: 60 * 60 * 24 * 365,
-      });
+      const opts = { httpOnly: true, secure: true, sameSite: "lax" as const, path: "/" };
+      jar.set(DID_COOKIE, did, { ...opts, maxAge: 60 * 60 * 24 * 365 });
+      jar.set(DV_COOKIE, user.id, { ...opts, maxAge: 60 * 60 * 24 * 365 });
       jar.delete(PENDING_COOKIE);
       return NextResponse.redirect(new URL("/", url.origin));
     }
