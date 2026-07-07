@@ -2,6 +2,8 @@
 // Domain types mirroring the paper "Home Risk Assessment Report"
 // ---------------------------------------------------------------------------
 
+import type { ItemId } from "./catalog";
+
 export type RiskLevel = "high" | "med" | "low";
 export type YesNo = boolean | null;
 
@@ -119,6 +121,17 @@ export interface JobData {
   followup: FollowUp;
 }
 
+// Per-package customizations a tech makes on the proposal screen: `qty`
+// overrides a line's quantity (0 removes it); `extra` are items they added.
+export interface ProposalTierEdits {
+  qty: Partial<Record<ItemId, number>>;
+  extra: ItemId[];
+}
+export interface ProposalEdits {
+  comprehensive: ProposalTierEdits;
+  basic: ProposalTierEdits;
+}
+
 export interface JobRecord {
   id: string;
   user_id: string;
@@ -131,6 +144,7 @@ export interface JobRecord {
   property: PropertySnapshot;
   followup: FollowUp;
   photo_path: string | null;
+  proposal_edits: ProposalEdits | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -225,6 +239,13 @@ export function emptyFollowUp(): FollowUp {
     petsOver80lb: false,
     wantMotionWithLargePets: true,
     notes: "",
+  };
+}
+
+export function emptyProposalEdits(): ProposalEdits {
+  return {
+    comprehensive: { qty: {}, extra: [] },
+    basic: { qty: {}, extra: [] },
   };
 }
 

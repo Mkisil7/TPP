@@ -10,6 +10,7 @@ import {
   type FollowUp,
   type JobRecord,
   type PropertySnapshot,
+  type ProposalEdits,
 } from "@/lib/types";
 
 async function requireUser() {
@@ -75,12 +76,18 @@ export async function saveJob(id: string, patch: JobPatch): Promise<void> {
   revalidatePath(`/assessment/${id}/review`);
 }
 
-/** Mark a job as saved/complete (shows up without the Draft badge). */
-export async function markJobSaved(id: string): Promise<void> {
+/**
+ * Mark a job as saved/complete (shows up without the Draft badge). Optionally
+ * persist the technician's proposal customizations so they reload intact.
+ */
+export async function markJobSaved(id: string, proposalEdits?: ProposalEdits): Promise<void> {
   const { supabase } = await requireUser();
-  const { error } = await supabase.from("jobs").update({ status: "saved" }).eq("id", id);
+  const update: Record<string, unknown> = { status: "saved" };
+  if (proposalEdits) update.proposal_edits = proposalEdits;
+  const { error } = await supabase.from("jobs").update(update).eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/");
+  revalidatePath(`/assessment/${id}/proposal`);
 }
 
 export async function deleteJob(id: string): Promise<void> {

@@ -13,23 +13,22 @@ import {
   type Recommendation,
   type Tier,
 } from "@/lib/recommendations";
-import type { JobData } from "@/lib/types";
+import { emptyProposalEdits, type JobData, type ProposalEdits } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 // Per-package edits layered on top of the deterministic recommendation:
 // `qty` overrides a line's quantity (0 removes it); `extra` are items the tech
 // added that the engine didn't include.
-type Edits = { qty: Partial<Record<ItemId, number>>; extra: ItemId[] };
-const emptyEdits = (): Edits => ({ qty: {}, extra: [] });
-
 export function Proposal({
   jobId,
   data,
   recommendation,
+  initialEdits,
 }: {
   jobId: string;
   data: JobData;
   recommendation: Recommendation;
+  initialEdits?: ProposalEdits;
 }) {
   const [tier, setTier] = useState<Tier>("comprehensive");
   const [saved, setSaved] = useState(false);
@@ -37,10 +36,7 @@ export function Proposal({
   const [pending, start] = useTransition();
   const router = useRouter();
 
-  const [edits, setEdits] = useState<Record<Tier, Edits>>({
-    comprehensive: emptyEdits(),
-    basic: emptyEdits(),
-  });
+  const [edits, setEdits] = useState<ProposalEdits>(initialEdits ?? emptyProposalEdits());
 
   // Merge the engine's line items with the tech's edits into the final,
   // category-grouped equipment list for a package.
@@ -81,6 +77,7 @@ export function Proposal({
   })).filter((g) => g.items.length > 0);
 
   function setQty(t: Tier, id: ItemId, q: number) {
+    setSaved(false);
     setEdits((prev) => ({
       ...prev,
       [t]: { ...prev[t], qty: { ...prev[t].qty, [id]: Math.max(0, q) } },
@@ -88,9 +85,10 @@ export function Proposal({
   }
 
   function addItem(t: Tier, id: ItemId) {
+    setSaved(false);
     setEdits((prev) => {
       const inBase = recommendation[t].byCategory.some((g) => g.items.some((i) => i.id === id));
-      const next: Edits = { qty: { ...prev[t].qty }, extra: [...prev[t].extra] };
+      const next = { qty: { ...prev[t].qty }, extra: [...prev[t].extra] };
       next.qty[id] = Math.max(1, prev[t].qty[id] ?? 0);
       if (!inBase && !next.extra.includes(id)) next.extra.push(id);
       return { ...prev, [t]: next };
@@ -109,7 +107,7 @@ export function Proposal({
               disabled={pending || saved}
               onClick={() =>
                 start(async () => {
-                  await markJobSaved(jobId);
+                  await markJobSaved(jobId, edits);
                   setSaved(true);
                   router.refresh();
                 })

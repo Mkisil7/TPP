@@ -2,11 +2,14 @@ import {
   emptyAssessment,
   emptyFollowUp,
   emptyProperty,
+  emptyProposalEdits,
   type Assessment,
   type FollowUp,
   type JobData,
   type JobRecord,
   type PropertySnapshot,
+  type ProposalEdits,
+  type ProposalTierEdits,
 } from "./types";
 
 // jsonb columns can hold partial/legacy data — deep-merge into full shapes so
@@ -39,6 +42,21 @@ export function normalizeProperty(p?: Partial<PropertySnapshot> | null): Propert
 
 export function normalizeFollowUp(f?: Partial<FollowUp> | null): FollowUp {
   return { ...emptyFollowUp(), ...(f ?? {}) };
+}
+
+function normalizeTierEdits(t?: Partial<ProposalTierEdits> | null): ProposalTierEdits {
+  return {
+    qty: t?.qty && typeof t.qty === "object" ? t.qty : {},
+    extra: Array.isArray(t?.extra) ? t!.extra : [],
+  };
+}
+
+export function normalizeProposalEdits(e?: Partial<ProposalEdits> | null): ProposalEdits {
+  if (!e) return emptyProposalEdits();
+  return {
+    comprehensive: normalizeTierEdits(e.comprehensive),
+    basic: normalizeTierEdits(e.basic),
+  };
 }
 
 export function normalizeJob(job: JobRecord): JobData {
