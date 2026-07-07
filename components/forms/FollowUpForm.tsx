@@ -108,6 +108,13 @@ export function FollowUpForm({
           value={f.hasFixedWindows}
           onChange={(v) => set("hasFixedWindows", v === true)}
         />
+        {f.hasFixedWindows && (
+          <NumberField
+            label="How many fixed / picture windows?"
+            value={f.fixedWindowCount}
+            onChange={(v) => set("fixedWindowCount", v ?? 0)}
+          />
+        )}
         <p className="text-xs text-slate-400">
           Impact glass can’t be broken, so no glass-break detectors are used. Fixed windows and
           many-window rooms are covered by a glass-break detector.

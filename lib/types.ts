@@ -106,6 +106,7 @@ export interface FollowUp {
   wifiQuality: WifiQuality;
   impactGlass: boolean; // home has impact glass → skip glass-break detectors
   hasFixedWindows: boolean; // fixed/picture windows → glass-break appropriate
+  fixedWindowCount: number; // how many fixed/picture windows (drives glass-break count)
   smallBusiness: boolean; // enables the 2-button panic button
   petsOver80lb: boolean;
   wantMotionWithLargePets: boolean; // relevant only when petsOver80lb
@@ -219,6 +220,7 @@ export function emptyFollowUp(): FollowUp {
     wifiQuality: "good",
     impactGlass: false,
     hasFixedWindows: false,
+    fixedWindowCount: 0,
     smallBusiness: false,
     petsOver80lb: false,
     wantMotionWithLargePets: true,

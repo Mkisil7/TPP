@@ -105,15 +105,14 @@ export function ProposalDocument({
         )}
       </Page>
 
-      {/* ---- Life safety & exterior ---- */}
+      {/* ---- Whole-home equipment (by category) ---- */}
       <Page className="p-5 sm:p-8">
-        <h2 className="mb-5 text-2xl font-extrabold text-adt-navy">
-          Life safety, video &amp; smart home
-        </h2>
+        <h2 className="mb-1 text-2xl font-extrabold text-adt-navy">System equipment</h2>
+        <p className="mb-5 text-sm text-slate-500">
+          Whole-home coverage beyond the per-area sensors above.
+        </p>
         <div className="space-y-5">
-          {tier.byCategory
-            .filter((g) => g.category !== "Burglar Protection")
-            .map((g) => (
+          {tier.wholeHomeByCategory.map((g) => (
               <div key={g.category}>
                 <h3 className="mb-2 border-b border-adt-line pb-1 text-sm font-bold uppercase tracking-wide text-adt-blue">
                   {g.category}

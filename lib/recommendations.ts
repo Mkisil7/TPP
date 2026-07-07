@@ -40,10 +40,16 @@ export interface RoomRecommendation {
   items: LineItem[];
 }
 
+export interface CategoryGroup {
+  category: CatalogCategory;
+  items: LineItem[];
+}
+
 export interface TierRecommendation {
   tier: Tier;
   rooms: RoomRecommendation[];
-  byCategory: { category: CatalogCategory; items: LineItem[] }[];
+  byCategory: CategoryGroup[]; // everything, merged — drives the pricing table
+  wholeHomeByCategory: CategoryGroup[]; // items not tied to a specific room
   totalUnits: number;
   notes: string[];
 }
@@ -124,26 +130,12 @@ function buildTier(tier: Tier, job: JobData): TierRecommendation {
     if (room.windows > 0) {
       if (comprehensive) {
         b.add("window_shock", room.windows, "Premium window sensor — detects opening and glass impact.", label);
-        // Fixed/picture windows can't take a contact sensor — cover with glass break.
-        if (glassAllowed && followup.hasFixedWindows) {
-          b.add("glass_break", 1, "Covers fixed/picture windows that can't take a contact sensor.", label);
-        }
+      } else if (glassAllowed && room.windows >= 5) {
+        // Basic: a single glass break protects a many-window room for far less
+        // than sensoring every window.
+        b.add("glass_break", 1, "One glass-break covers this multi-window room affordably.", label);
       } else {
-        // Basic: a single glass break can protect a many-window room (or any
-        // fixed glass) for far less than sensoring every window.
-        const useGlass = glassAllowed && (room.windows >= 5 || followup.hasFixedWindows);
-        if (useGlass) {
-          b.add(
-            "glass_break",
-            1,
-            room.windows >= 5
-              ? "One glass-break covers this multi-window room affordably."
-              : "Covers fixed/picture windows in this room.",
-            label,
-          );
-        } else {
-          b.add("window_open_close", room.windows, "Detects when these windows are opened.", label);
-        }
+        b.add("window_open_close", room.windows, "Detects when these windows are opened.", label);
       }
     }
 
@@ -163,6 +155,17 @@ function buildTier(tier: Tier, job: JobData): TierRecommendation {
     if (!hasGarageRoom) {
       b.add("overhead_garage_sensor", 1, "Flagged vulnerable overhead garage door.", "Garage");
     }
+  }
+
+  // Fixed / picture windows can't take a contact or shock sensor — cover them
+  // with glass-break detectors (one per fixed window). Skipped for impact glass.
+  const fixedWindows = Math.max(0, followup.fixedWindowCount || 0);
+  if (glassAllowed && fixedWindows > 0) {
+    b.add(
+      "glass_break",
+      fixedWindows,
+      `Covers ${fixedWindows} fixed/picture window${fixedWindows === 1 ? "" : "s"} that can't take a contact sensor.`,
+    );
   }
 
   // --- Life safety -------------------------------------------------------
@@ -277,9 +280,10 @@ function buildTier(tier: Tier, job: JobData): TierRecommendation {
   // --- Group results -----------------------------------------------------
   const rooms = groupByRoom(items, assessment.rooms);
   const byCategory = groupByCategory(items);
+  const wholeHomeByCategory = groupByCategory(items.filter((it) => !it.room));
   const totalUnits = items.reduce((sum, it) => sum + it.quantity, 0);
 
-  return { tier, rooms, byCategory, totalUnits, notes };
+  return { tier, rooms, byCategory, wholeHomeByCategory, totalUnits, notes };
 }
 
 function groupByRoom(items: LineItem[], roomRows: RoomRow[]): RoomRecommendation[] {
@@ -301,7 +305,7 @@ function groupByRoom(items: LineItem[], roomRows: RoomRow[]): RoomRecommendation
     }));
 }
 
-function groupByCategory(items: LineItem[]): { category: CatalogCategory; items: LineItem[] }[] {
+function groupByCategory(items: LineItem[]): CategoryGroup[] {
   // Merge same item id across rooms into a single category line.
   const merged = new Map<ItemId, LineItem>();
   for (const it of items) {
