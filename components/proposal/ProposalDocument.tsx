@@ -1,5 +1,6 @@
 import { AdtLogo } from "@/components/Brand";
-import { TIER_META, type TierRecommendation } from "@/lib/recommendations";
+import type { ItemId } from "@/lib/catalog";
+import { TIER_META, type CategoryGroup, type TierRecommendation } from "@/lib/recommendations";
 import type { JobData } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
 import { cn } from "@/lib/utils";
@@ -14,12 +15,42 @@ function Page({ children, className }: { children: React.ReactNode; className?: 
   );
 }
 
+// Subtle inline quantity control: the ± buttons are screen-only (`no-print`),
+// so the printed/PDF proposal shows just the clean number.
+function Qty({ value, onChange }: { value: number; onChange: (q: number) => void }) {
+  return (
+    <span className="inline-flex items-center gap-1">
+      <button
+        type="button"
+        aria-label="Decrease quantity"
+        onClick={() => onChange(value - 1)}
+        className="no-print flex h-5 w-5 items-center justify-center rounded-full border border-adt-line text-slate-400 transition hover:border-adt-blue hover:text-adt-navy"
+      >
+        −
+      </button>
+      <span className="min-w-[1.25rem] text-center font-semibold text-adt-navy tabular-nums">{value}×</span>
+      <button
+        type="button"
+        aria-label="Increase quantity"
+        onClick={() => onChange(value + 1)}
+        className="no-print flex h-5 w-5 items-center justify-center rounded-full border border-adt-line text-slate-400 transition hover:border-adt-blue hover:text-adt-navy"
+      >
+        +
+      </button>
+    </span>
+  );
+}
+
 export function ProposalDocument({
   data,
   tier,
+  groups,
+  onQty,
 }: {
   data: JobData;
   tier: TierRecommendation;
+  groups: CategoryGroup[];
+  onQty: (id: ItemId, q: number) => void;
 }) {
   const meta = TIER_META[tier.tier];
   const { assessment, property } = data;
@@ -105,30 +136,41 @@ export function ProposalDocument({
         )}
       </Page>
 
-      {/* ---- Whole-home equipment (by category) ---- */}
+      {/* ---- Complete equipment list (editable) ---- */}
       <Page className="p-5 sm:p-8">
-        <h2 className="mb-1 text-2xl font-extrabold text-adt-navy">System equipment</h2>
+        <h2 className="mb-1 text-2xl font-extrabold text-adt-navy">Equipment list</h2>
         <p className="mb-5 text-sm text-slate-500">
-          Whole-home coverage beyond the per-area sensors above.
+          The complete {meta.label.toLowerCase()} package. Adjust any quantity below.
         </p>
         <div className="space-y-5">
-          {tier.wholeHomeByCategory.map((g) => (
-              <div key={g.category}>
-                <h3 className="mb-2 border-b border-adt-line pb-1 text-sm font-bold uppercase tracking-wide text-adt-blue">
-                  {g.category}
-                </h3>
-                <ul className="space-y-1.5">
-                  {g.items.map((it) => (
-                    <li key={it.id} className="flex justify-between gap-3 text-sm">
-                      <span className="text-slate-700">
-                        <span className="font-semibold text-adt-navy">{it.quantity}×</span> {it.name}
-                        <span className="block text-xs text-slate-400">{it.reason}</span>
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+          {groups.map((g) => (
+            <div key={g.category}>
+              <h3 className="mb-2 border-b border-adt-line pb-1 text-sm font-bold uppercase tracking-wide text-adt-blue">
+                {g.category}
+              </h3>
+              <ul className="space-y-1.5">
+                {g.items.map((it) => (
+                  <li key={it.id} className="flex items-start justify-between gap-3 text-sm">
+                    <span className="text-slate-700">
+                      {it.name}
+                      <span className="block text-xs text-slate-400">{it.reason}</span>
+                    </span>
+                    <span className="flex shrink-0 items-center gap-2">
+                      <Qty value={it.quantity} onChange={(q) => onQty(it.id, q)} />
+                      <button
+                        type="button"
+                        aria-label={`Remove ${it.name}`}
+                        onClick={() => onQty(it.id, 0)}
+                        className="no-print text-xs text-slate-300 transition hover:text-red-500"
+                      >
+                        Remove
+                      </button>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
         {tier.notes.length > 0 && (
           <div className="mt-5 rounded-xl bg-adt-mist p-4">
@@ -152,7 +194,7 @@ export function ProposalDocument({
             on a table a technician is showing a customer. Real table on
             wider screens and in the printed/PDF export. */}
         <div className="space-y-2 sm:hidden">
-          {tier.byCategory.flatMap((g) =>
+          {groups.flatMap((g) =>
             g.items.map((it) => (
               <div key={it.id} className="rounded-lg border border-adt-line/70 px-3 py-2">
                 <div className="flex items-start justify-between gap-3">
@@ -178,7 +220,7 @@ export function ProposalDocument({
             </tr>
           </thead>
           <tbody>
-            {tier.byCategory.flatMap((g) =>
+            {groups.flatMap((g) =>
               g.items.map((it) => (
                 <tr key={it.id} className="border-b border-adt-line/70">
                   <td className="py-1.5 text-slate-700">{it.name}</td>

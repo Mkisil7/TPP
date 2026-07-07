@@ -48,8 +48,7 @@ export interface CategoryGroup {
 export interface TierRecommendation {
   tier: Tier;
   rooms: RoomRecommendation[];
-  byCategory: CategoryGroup[]; // everything, merged — drives the pricing table
-  wholeHomeByCategory: CategoryGroup[]; // items not tied to a specific room
+  byCategory: CategoryGroup[]; // everything, merged — the editable equipment list
   totalUnits: number;
   notes: string[];
 }
@@ -229,23 +228,19 @@ function buildTier(tier: Tier, job: JobData): TierRecommendation {
   // --- Video / display ---------------------------------------------------
   b.add("nest_doorbell", 1, "See and speak to visitors at the front door.");
 
+  // Cameras: the tech picks a total count. Existing floodlight locations are
+  // the natural spot for a floodlight camera (camera + light in one), so up to
+  // that many of the requested cameras become floodlight cameras and the rest
+  // are regular outdoor cameras. No existing floodlights → all regular.
   const cams = Math.max(0, followup.cameraCount || 0);
-  if (cams > 0) {
-    b.add("outdoor_camera", cams, "Exterior cameras selected during the walkthrough.");
+  const existingFloodlights = Math.max(0, followup.existingFloodlightCount || 0);
+  const floodlightCams = Math.min(cams, existingFloodlights);
+  const regularCams = cams - floodlightCams;
+  if (floodlightCams > 0) {
+    b.add("floodlight_camera", floodlightCams, "Floodlight camera at an existing floodlight location.");
   }
-
-  // Floodlight cameras where exterior lighting is poor — net of existing.
-  const ext = assessment.exterior;
-  const floodNeedRaw = (ext.noMotionLights ? 1 : 0) + (ext.poorLighting ? 1 : 0);
-  if (floodNeedRaw > 0) {
-    const net = Math.max(0, floodNeedRaw - followup.existingFloodlightCount);
-    if (net > 0) {
-      b.add("floodlight_camera", net, "Lights + camera where exterior lighting is poor.");
-    } else if (followup.existingFloodlightCount > 0) {
-      notes.push(
-        `Credited ${followup.existingFloodlightCount} existing floodlight(s) — no additional floodlight cameras needed.`,
-      );
-    }
+  if (regularCams > 0) {
+    b.add("outdoor_camera", regularCams, "Outdoor camera for exterior coverage.");
   }
 
   // Wi-Fi reinforcement when on-site Wi-Fi is weak.
@@ -280,10 +275,9 @@ function buildTier(tier: Tier, job: JobData): TierRecommendation {
   // --- Group results -----------------------------------------------------
   const rooms = groupByRoom(items, assessment.rooms);
   const byCategory = groupByCategory(items);
-  const wholeHomeByCategory = groupByCategory(items.filter((it) => !it.room));
   const totalUnits = items.reduce((sum, it) => sum + it.quantity, 0);
 
-  return { tier, rooms, byCategory, wholeHomeByCategory, totalUnits, notes };
+  return { tier, rooms, byCategory, totalUnits, notes };
 }
 
 function groupByRoom(items: LineItem[], roomRows: RoomRow[]): RoomRecommendation[] {
