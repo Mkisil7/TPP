@@ -95,10 +95,18 @@ export interface PropertySnapshot {
 }
 
 export type WifiQuality = "good" | "weak" | "none";
+export type SystemType = "v5" | "command";
 
 export interface FollowUp {
+  systemType: SystemType; // asked up top — v5 or Command
+  extraTouchscreens: number; // additional touchscreen panels beyond the base one
+  deskMountNeeded: boolean; // Command only; desk mount is rarely used
+  cameraCount: number; // how many cameras the customer wants
   existingFloodlightCount: number;
   wifiQuality: WifiQuality;
+  impactGlass: boolean; // home has impact glass → skip glass-break detectors
+  hasFixedWindows: boolean; // fixed/picture windows → glass-break appropriate
+  smallBusiness: boolean; // enables the 2-button panic button
   petsOver80lb: boolean;
   wantMotionWithLargePets: boolean; // relevant only when petsOver80lb
   notes: string;
@@ -203,8 +211,15 @@ export function emptyProperty(): PropertySnapshot {
 
 export function emptyFollowUp(): FollowUp {
   return {
+    systemType: "command",
+    extraTouchscreens: 0,
+    deskMountNeeded: false,
+    cameraCount: 2,
     existingFloodlightCount: 0,
     wifiQuality: "good",
+    impactGlass: false,
+    hasFixedWindows: false,
+    smallBusiness: false,
     petsOver80lb: false,
     wantMotionWithLargePets: true,
     notes: "",

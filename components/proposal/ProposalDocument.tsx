@@ -17,11 +17,9 @@ function Page({ children, className }: { children: React.ReactNode; className?: 
 export function ProposalDocument({
   data,
   tier,
-  narrative,
 }: {
   data: JobData;
   tier: TierRecommendation;
-  narrative: string;
 }) {
   const meta = TIER_META[tier.tier];
   const { assessment, property } = data;
@@ -60,22 +58,6 @@ export function ProposalDocument({
         <div className="px-5 py-5 sm:px-8">
           <p className="text-sm leading-relaxed text-slate-600">{meta.blurb}</p>
         </div>
-      </Page>
-
-      {/* ---- What we found ---- */}
-      <Page className="p-5 sm:p-8">
-        <h2 className="mb-4 text-2xl font-extrabold text-adt-navy">What we found</h2>
-        {narrative ? (
-          <div className="space-y-3 text-[15px] leading-relaxed text-slate-700">
-            {narrative.split(/\n{2,}/).map((para, i) => (
-              <p key={i}>{para}</p>
-            ))}
-          </div>
-        ) : (
-          <p className="text-sm italic text-slate-400">
-            Walkthrough summary will appear here once generated.
-          </p>
-        )}
       </Page>
 
       {/* ---- Area by area ---- */}
@@ -130,7 +112,7 @@ export function ProposalDocument({
         </h2>
         <div className="space-y-5">
           {tier.byCategory
-            .filter((g) => g.category !== "Doors" && g.category !== "Windows")
+            .filter((g) => g.category !== "Burglar Protection")
             .map((g) => (
               <div key={g.category}>
                 <h3 className="mb-2 border-b border-adt-line pb-1 text-sm font-bold uppercase tracking-wide text-adt-blue">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ProposalDocument } from "./ProposalDocument";
 import { markJobSaved } from "@/app/actions/jobs";
@@ -18,32 +18,9 @@ export function Proposal({
   recommendation: Recommendation;
 }) {
   const [tier, setTier] = useState<Tier>("comprehensive");
-  const [narrative, setNarrative] = useState<string>("");
-  const [loadingNarrative, setLoadingNarrative] = useState(true);
   const [saved, setSaved] = useState(false);
   const [pending, start] = useTransition();
   const router = useRouter();
-
-  // Generate the plain-language "what we found" once (shared across tiers).
-  useEffect(() => {
-    let active = true;
-    (async () => {
-      try {
-        const res = await fetch("/api/narrative", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ assessment: data.assessment, property: data.property }),
-        });
-        const json = await res.json();
-        if (active && res.ok) setNarrative(json.narrative || "");
-      } finally {
-        if (active) setLoadingNarrative(false);
-      }
-    })();
-    return () => {
-      active = false;
-    };
-  }, [data]);
 
   return (
     <div>
@@ -99,16 +76,10 @@ export function Proposal({
             );
           })}
         </div>
-
-        {loadingNarrative && (
-          <p className="mt-3 text-center text-sm text-slate-400">
-            Generating the “what we found” summary…
-          </p>
-        )}
       </div>
 
       {/* The printable document for the selected tier */}
-      <ProposalDocument data={data} tier={recommendation[tier]} narrative={narrative} />
+      <ProposalDocument data={data} tier={recommendation[tier]} />
     </div>
   );
 }

@@ -12,15 +12,24 @@ a polished, customer-facing protection proposal generated at **two levels** —
   editable review screen.
 - **Guided flow** — Review → Property snapshot → Follow-up Q&A → Proposal.
 - **Deterministic recommendation engine** — maps each room's door/window counts and
-  risk level, life-safety flags, and the exterior walk-around to ADT equipment
-  across three escalating tiers. Key rules:
-  - Wi-Fi = **none** strips every Wi-Fi/smart device from the package.
-  - Pet > 80 lbs + "no motion wanted" removes motion detectors.
-  - Garage → overhead door sensor (+ myQ on smart tiers); flood history → flood
-    detector; exterior lighting gaps → floodlight cameras (net of existing).
-- **Customer-facing proposal** — branded cover + property snapshot, plain-language
-  "What we found" (Claude-generated), area-by-area equipment, life-safety/video/
-  smart-home, and a pricing/signature page. One-tap **Download / Print PDF**.
+  risk level, life-safety flags, and the exterior walk-around to ADT equipment across
+  two packages (**Comprehensive** and **Basic**), grouped as Burglar Protection · Life
+  Safety · Video/Display · Smart Home. Key rules:
+  - Every area gets its door/window sensor on both packages, even low-risk rooms.
+    Comprehensive uses the premium shock sensor (open/close + impact in one unit);
+    basic uses a plain open/close sensor.
+  - Glass-break detectors cover fixed/picture windows and many-window rooms (and
+    replace individual sensors on basic to save money) — skipped if the home has
+    impact glass.
+  - Life safety uses a combination smoke/heat/CO detector (one unit) whenever CO is
+    in play, otherwise smoke/heat only.
+  - Wi-Fi = **none** strips every Wi-Fi/smart device; pet > 80 lbs + "no motion
+    wanted" removes motion detectors; garage → overhead door sensor.
+  - Follow-up answers drive the rest: V5 vs Command, extra touchscreens, desk mount
+    (Command only), camera count, small-business panic button.
+- **Customer-facing proposal** — branded cover + property snapshot, area-by-area
+  equipment, life-safety/video/smart-home breakdown, and a pricing/signature page.
+  One-tap **Download / Print PDF**.
 - **History** — save jobs; reload past jobs by family name + date.
 
 ## Tech

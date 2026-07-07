@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { saveJob } from "@/app/actions/jobs";
-import type { FollowUp, WifiQuality } from "@/lib/types";
+import type { FollowUp, SystemType, WifiQuality } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { NumberField, Section, TextArea, YesNo } from "./fields";
 
@@ -11,6 +11,11 @@ const WIFI: { v: WifiQuality; label: string; note: string }[] = [
   { v: "good", label: "Good", note: "Smart & video devices fine" },
   { v: "weak", label: "Weak", note: "Add Wi-Fi router / extender" },
   { v: "none", label: "None", note: "Strips all Wi-Fi devices" },
+];
+
+const SYSTEMS: { v: SystemType; label: string; note: string }[] = [
+  { v: "command", label: "Command", note: "Touchscreen hub system" },
+  { v: "v5", label: "V5", note: "Newer self-setup panel" },
 ];
 
 export function FollowUpForm({
@@ -41,7 +46,80 @@ export function FollowUpForm({
       <h1 className="text-2xl font-extrabold text-adt-navy">Follow-up</h1>
       <p className="text-sm text-slate-500">A few things the paper form doesn’t capture.</p>
 
-      <Section title="On-site details">
+      <Section title="System">
+        <div>
+          <span className="field-label">Panel type</span>
+          <div className="grid grid-cols-2 gap-2">
+            {SYSTEMS.map((s) => (
+              <button
+                key={s.v}
+                type="button"
+                onClick={() => set("systemType", s.v)}
+                className={cn(
+                  "rounded-xl border p-3 text-center transition",
+                  f.systemType === s.v
+                    ? "border-adt-navy bg-adt-navy text-white"
+                    : "border-adt-line bg-white text-adt-navy hover:bg-adt-mist",
+                )}
+              >
+                <div className="font-bold">{s.label}</div>
+                <div
+                  className={cn(
+                    "mt-1 text-[11px] leading-tight",
+                    f.systemType === s.v ? "text-white/80" : "text-slate-500",
+                  )}
+                >
+                  {s.note}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <NumberField
+          label="Additional touchscreen panels needed (beyond the main one)"
+          value={f.extraTouchscreens}
+          onChange={(v) => set("extraTouchscreens", v ?? 0)}
+        />
+
+        {f.systemType === "command" && (
+          <YesNo
+            label="Desk mount needed? (rarely used)"
+            value={f.deskMountNeeded}
+            onChange={(v) => set("deskMountNeeded", v === true)}
+          />
+        )}
+
+        <YesNo
+          label="Small business location? (adds panic button)"
+          value={f.smallBusiness}
+          onChange={(v) => set("smallBusiness", v === true)}
+        />
+      </Section>
+
+      <Section title="Windows & glass">
+        <YesNo
+          label="Home has impact glass?"
+          value={f.impactGlass}
+          onChange={(v) => set("impactGlass", v === true)}
+        />
+        <YesNo
+          label="Any fixed / picture windows?"
+          value={f.hasFixedWindows}
+          onChange={(v) => set("hasFixedWindows", v === true)}
+        />
+        <p className="text-xs text-slate-400">
+          Impact glass can’t be broken, so no glass-break detectors are used. Fixed windows and
+          many-window rooms are covered by a glass-break detector.
+        </p>
+      </Section>
+
+      <Section title="Video & exterior">
+        <NumberField
+          label="How many cameras?"
+          value={f.cameraCount}
+          onChange={(v) => set("cameraCount", v ?? 0)}
+        />
         <NumberField
           label="Existing floodlight count"
           value={f.existingFloodlightCount}
@@ -76,7 +154,9 @@ export function FollowUpForm({
             ))}
           </div>
         </div>
+      </Section>
 
+      <Section title="Pets & notes">
         <YesNo
           label="Pet over 80 lbs?"
           value={f.petsOver80lb}
