@@ -2,8 +2,8 @@
 
 A phone-friendly web app for ADT field security technicians. Take a photo of (or
 manually enter) a paper **Home Risk Assessment Report**, and the app turns it into
-a polished, customer-facing protection proposal generated at **three levels** —
-🥉 Bronze, 🥈 Silver, 🥇 Gold — ready to hand the customer on the spot.
+a polished, customer-facing protection proposal generated at **two levels** —
+**Comprehensive** and **Basic** — ready to hand the customer on the spot.
 
 ## Features
 

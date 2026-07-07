@@ -3,28 +3,24 @@ import type { JobData, RiskLevel, RoomRow } from "./types";
 
 // ---------------------------------------------------------------------------
 // Deterministic, rule-based recommendation engine.
-// Produces equipment lists for three escalating protection tiers.
+// Produces equipment lists for two protection packages.
 // ---------------------------------------------------------------------------
 
-export type Tier = "bronze" | "silver" | "gold";
+export type Tier = "comprehensive" | "basic";
 
-export const TIERS: Tier[] = ["bronze", "silver", "gold"];
+/** Display order: lead with the full package. */
+export const TIERS: Tier[] = ["comprehensive", "basic"];
 
-export const TIER_META: Record<Tier, { label: string; medal: string; blurb: string }> = {
-  bronze: {
-    label: "Bronze",
-    medal: "🥉",
-    blurb: "Essential protection for the highest-risk entry points and core life safety.",
+export const TIER_META: Record<Tier, { label: string; blurb: string }> = {
+  comprehensive: {
+    label: "Comprehensive",
+    blurb:
+      "Whole-home defense: every opening protected, full video coverage, complete life safety, and smart-home automation.",
   },
-  silver: {
-    label: "Silver",
-    medal: "🥈",
-    blurb: "Comprehensive coverage of doors, windows, and key rooms with smart monitoring.",
-  },
-  gold: {
-    label: "Gold",
-    medal: "🥇",
-    blurb: "Whole-home defense: every opening protected, full video, and smart-home automation.",
+  basic: {
+    label: "Basic",
+    blurb:
+      "The essentials: entry protection on the key areas of the home plus core life-safety coverage.",
   },
 };
 
@@ -52,21 +48,19 @@ export interface TierRecommendation {
 }
 
 export interface Recommendation {
-  bronze: TierRecommendation;
-  silver: TierRecommendation;
-  gold: TierRecommendation;
+  basic: TierRecommendation;
+  comprehensive: TierRecommendation;
 }
 
-const RANK: Record<Tier, number> = { bronze: 1, silver: 2, gold: 3 };
+const RANK: Record<Tier, number> = { basic: 1, comprehensive: 2 };
 
 function isGarage(name: string): boolean {
   return /gar/i.test(name);
 }
 
 function riskIncluded(tier: Tier, risk: RiskLevel): boolean {
-  if (tier === "gold") return true;
-  if (tier === "silver") return risk === "high" || risk === "med";
-  return risk === "high"; // bronze
+  if (tier === "comprehensive") return true;
+  return risk === "high" || risk === "med"; // basic skips low-risk rooms
 }
 
 function matches(text: string, words: string[]): boolean {
@@ -132,27 +126,18 @@ function buildTier(tier: Tier, job: JobData): TierRecommendation {
       b.add("overhead_garage_sensor", 1, "Monitors the overhead garage door.", label);
     }
 
-    // Glass break — high-risk rooms on silver, all rooms on gold.
-    if (room.windows > 0) {
-      const glassOk =
-        (tier === "silver" && room.riskLevel === "high") || tier === "gold";
-      if (glassOk) {
+    // Glass break + shock + motion — comprehensive package only.
+    if (tier === "comprehensive") {
+      if (room.windows > 0) {
         b.add("glass_break", 1, "Catches forced entry through the windows.", label);
       }
-    }
-
-    // Shock sensors — gold only, on high-risk openings.
-    if (tier === "gold" && room.riskLevel === "high") {
-      if (room.doors > 0) b.add("door_shock", room.doors, "Detects impact/forced entry on doors.", label);
-      if (room.windows > 0) b.add("window_shock", room.windows, "Detects impact/forced entry on windows.", label);
-    }
-
-    // Motion sensors — high-risk on silver, high+med on gold.
-    const motionOk =
-      (tier === "silver" && room.riskLevel === "high") ||
-      (tier === "gold" && (room.riskLevel === "high" || room.riskLevel === "med"));
-    if (motionOk) {
-      b.add("motion_sensor", 1, "Interior motion coverage for this area.", label);
+      if (room.riskLevel === "high") {
+        if (room.doors > 0) b.add("door_shock", room.doors, "Detects impact/forced entry on doors.", label);
+        if (room.windows > 0) b.add("window_shock", room.windows, "Detects impact/forced entry on windows.", label);
+      }
+      if (room.riskLevel === "high" || room.riskLevel === "med") {
+        b.add("motion_sensor", 1, "Interior motion coverage for this area.", label);
+      }
     }
   }
 
@@ -176,11 +161,11 @@ function buildTier(tier: Tier, job: JobData): TierRecommendation {
   const smokeReason = smokeFlagged
     ? "Existing detectors flagged expired/missing — replace and add coverage."
     : "Smoke & heat protection for sleeping and living areas.";
-  const smokeQty = tier === "bronze" ? 2 : tier === "silver" ? Math.max(3, beds) : Math.max(4, beds + 2);
+  const smokeQty = tier === "basic" ? Math.max(3, beds) : Math.max(4, beds + 2);
   b.add("smoke_heat_detector", smokeQty, smokeReason);
 
   const coFlagged = ls.carbonMonoxideSources || ls.vuln.coOver5Years || ls.personsSleepingUpstairs === true;
-  const coQty = tier === "bronze" ? 1 : tier === "silver" ? (coFlagged ? 2 : 1) : coFlagged ? 3 : 2;
+  const coQty = tier === "basic" ? (coFlagged ? 2 : 1) : coFlagged ? 3 : 2;
   b.add(
     "carbon_monoxide_detector",
     coQty,
@@ -193,27 +178,27 @@ function buildTier(tier: Tier, job: JobData): TierRecommendation {
     ls.vuln.signsOfWaterLeak ||
     ls.vuln.wornWaterHose;
   if (floodFlagged) {
-    const floodQty = tier === "gold" ? 2 : 1;
+    const floodQty = tier === "comprehensive" ? 2 : 1;
     b.add("flood_detector", floodQty, "Water/flood risk flagged on the assessment.");
   }
 
   // --- Smart home extras -------------------------------------------------
   if (RANK[tier] >= 2) {
     b.add("interior_siren", 1, "Audible deterrent inside the home.");
-    b.add("key_fob_4btn", tier === "gold" ? 2 : 1, "One-touch arm/disarm at the door.");
+    b.add("key_fob_4btn", 2, "One-touch arm/disarm at the door.");
     b.add("door_lock", 1, "Smart lock for keyless, remote entry control.");
   }
-  if (tier === "gold") {
+  if (tier === "comprehensive") {
     b.add("exterior_siren", 1, "Loud outdoor deterrent during an alarm.");
     b.add("nest_thermostat", 1, "Smart climate control add-on.");
     b.add("appliance_module", 1, "Automate lamps/appliances for lived-in look.");
     b.add("google_hub_2nd_gen", 1, "Smart display for system & home control.");
   }
 
-  // Panic button — concern-driven, always on gold.
+  // Panic button — concern-driven, always in the comprehensive package.
   if (livesAlone || wantsIntrusion) {
     if (RANK[tier] >= 2) b.add("panic_button_2", 1, "Personal panic button — lives alone / intrusion concern.");
-  } else if (tier === "gold") {
+  } else if (tier === "comprehensive") {
     b.add("panic_button_2", 1, "Personal panic button for emergencies.");
   }
 
@@ -233,17 +218,17 @@ function buildTier(tier: Tier, job: JobData): TierRecommendation {
     (ext.poorLighting ? 1 : 0);
 
   if (RANK[tier] >= 2 && extRisk >= 1) {
-    const outdoorQty = tier === "gold" ? Math.max(1, Math.min(extRisk, 4)) : 1;
+    const outdoorQty = Math.max(1, Math.min(extRisk, 4));
     b.add("outdoor_camera", outdoorQty, "Exterior camera for flagged perimeter risks.");
   }
-  if (tier === "gold") {
+  if (tier === "comprehensive") {
     b.add("indoor_camera", 1, "Interior camera for main living area.");
   }
 
   // Floodlight cameras — net of existing floodlights on site.
   const floodNeedRaw = (ext.noMotionLights ? 1 : 0) + (ext.poorLighting ? 1 : 0);
   if (floodNeedRaw > 0 && RANK[tier] >= 2) {
-    const want = tier === "gold" ? floodNeedRaw : 1;
+    const want = floodNeedRaw;
     const net = Math.max(0, want - followup.existingFloodlightCount);
     if (net > 0) {
       b.add("floodlight_camera", net, "Lights + camera where exterior lighting is poor.");
@@ -255,7 +240,7 @@ function buildTier(tier: Tier, job: JobData): TierRecommendation {
   // Wi-Fi reinforcement when on-site Wi-Fi is weak.
   if (followup.wifiQuality === "weak" && RANK[tier] >= 2) {
     b.add("nest_router", 1, "Strengthens weak on-site Wi-Fi for video devices.");
-    if (tier === "gold") b.add("wifi_add_on_point", 1, "Extends Wi-Fi coverage to the perimeter.");
+    b.add("wifi_add_on_point", 1, "Extends Wi-Fi coverage to the perimeter.");
   }
 
   // --- Gates -------------------------------------------------------------
@@ -325,8 +310,7 @@ function groupByCategory(items: LineItem[]): { category: CatalogCategory; items:
 
 export function recommend(job: JobData): Recommendation {
   return {
-    bronze: buildTier("bronze", job),
-    silver: buildTier("silver", job),
-    gold: buildTier("gold", job),
+    basic: buildTier("basic", job),
+    comprehensive: buildTier("comprehensive", job),
   };
 }

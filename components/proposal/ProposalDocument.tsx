@@ -35,7 +35,7 @@ export function ProposalDocument({
           <div className="mb-8 flex items-center justify-between">
             <AdtLogo light />
             <span className="rounded-full bg-white/15 px-3 py-1 text-sm font-semibold">
-              {meta.medal} {meta.label} Protection
+              {meta.label} Protection
             </span>
           </div>
           <h1 className="text-3xl font-extrabold leading-tight">
@@ -163,7 +163,7 @@ export function ProposalDocument({
       {/* ---- Pricing & signature ---- */}
       <Page className="p-5 sm:p-8">
         <h2 className="mb-1 text-2xl font-extrabold text-adt-navy">
-          {meta.medal} {meta.label} — investment &amp; agreement
+          {meta.label} — investment &amp; agreement
         </h2>
         <p className="mb-4 text-sm text-slate-500">Quality Service Plan &amp; 24/7 ADT Monitoring.</p>
 

@@ -17,7 +17,7 @@ export function Proposal({
   data: JobData;
   recommendation: Recommendation;
 }) {
-  const [tier, setTier] = useState<Tier>("silver");
+  const [tier, setTier] = useState<Tier>("comprehensive");
   const [narrative, setNarrative] = useState<string>("");
   const [loadingNarrative, setLoadingNarrative] = useState(true);
   const [saved, setSaved] = useState(false);
@@ -71,7 +71,7 @@ export function Proposal({
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2">
           {TIERS.map((t) => {
             const m = TIER_META[t];
             const units = recommendation[t].totalUnits;
@@ -80,14 +80,13 @@ export function Proposal({
                 key={t}
                 onClick={() => setTier(t)}
                 className={cn(
-                  "rounded-xl border p-3 text-center transition",
+                  "rounded-xl border p-4 text-center transition",
                   tier === t
                     ? "border-adt-navy bg-adt-navy text-white shadow-card"
                     : "border-adt-line bg-white text-adt-navy hover:bg-adt-mist",
                 )}
               >
-                <div className="text-2xl">{m.medal}</div>
-                <div className="font-bold">{m.label}</div>
+                <div className="text-lg font-bold">{m.label}</div>
                 <div
                   className={cn(
                     "text-xs",

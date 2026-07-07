@@ -20,11 +20,16 @@ export default function LoginPage() {
   const action = mode === "signin" ? signIn : signUp;
   const [state, formAction] = useFormState<AuthState, FormData>(action, {});
 
+  const [success, setSuccess] = useState("");
+
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("m") === "link") {
+    const m = new URLSearchParams(window.location.search).get("m");
+    if (m === "link") {
       setNotice(
         "That sign-in link couldn't be used in this browser (links are one-time and must open where you signed in). Sign in again and we'll send a fresh one.",
       );
+    } else if (m === "reset") {
+      setSuccess("Password updated — sign in with your new password.");
     }
   }, []);
 
@@ -40,6 +45,9 @@ export default function LoginPage() {
 
         {notice && (
           <p className="mb-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">{notice}</p>
+        )}
+        {success && (
+          <p className="mb-4 rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700">{success}</p>
         )}
 
         <form action={formAction} className="space-y-4">
@@ -83,7 +91,7 @@ export default function LoginPage() {
           <SubmitButton label={mode === "signin" ? "Sign in" : "Create account"} />
         </form>
 
-        <div className="mt-5 text-center text-sm text-slate-500">
+        <div className="mt-5 flex items-center justify-between text-sm text-slate-500">
           {mode === "signin" ? (
             <button className="font-semibold text-adt-blue" onClick={() => setMode("signup")}>
               Need an account? Create one
@@ -93,6 +101,9 @@ export default function LoginPage() {
               Already have an account? Sign in
             </button>
           )}
+          <a href="/reset" className="font-semibold text-slate-500 hover:text-adt-navy">
+            Forgot password?
+          </a>
         </div>
 
         <p className="mt-5 text-center text-xs text-slate-400">

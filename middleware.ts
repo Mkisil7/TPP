@@ -6,7 +6,7 @@ type CookieToSet = { name: string; value: string; options: CookieOptions };
 
 // Routes reachable without a session. API routes enforce their own auth
 // (returning JSON 401) instead of redirecting.
-const PUBLIC_PATHS = ["/login", "/verify", "/auth", "/api"];
+const PUBLIC_PATHS = ["/login", "/verify", "/reset", "/auth", "/api"];
 
 const DID_COOKIE = "adt_did"; // trusted-device id
 const DV_COOKIE = "adt_dv"; // fast-path marker: device verified for this user id

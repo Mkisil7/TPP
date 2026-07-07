@@ -279,6 +279,29 @@ export async function resendCode(): Promise<AuthState> {
   return { message: "A new email is on its way." };
 }
 
+/**
+ * Forgot password: the user proves identity with their authenticator code
+ * (email links/codes are unreliable behind corporate mail scanners). The
+ * heavy lifting + rate limiting lives in the reset_password_with_totp
+ * Postgres function.
+ */
+export async function resetPassword(_prev: AuthState, formData: FormData): Promise<AuthState> {
+  const email = String(formData.get("email") ?? "").trim();
+  const code = String(formData.get("code") ?? "").replace(/\s/g, "");
+  const password = String(formData.get("password") ?? "");
+  if (!domainOk(email)) return { error: `Use your @${ALLOWED_DOMAIN} email address.` };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("reset_password_with_totp", {
+    p_email: email,
+    p_code: code,
+    p_new_password: password,
+  });
+  if (error) return { error: error.message };
+  if (data !== "OK") return { error: String(data) };
+  redirect("/login?m=reset");
+}
+
 /** Abandon verification and go back to the login screen. */
 export async function cancelVerification() {
   const supabase = await createClient();
